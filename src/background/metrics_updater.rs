@@ -34,7 +34,7 @@ impl MyTimerTick for MetricsUpdater {
                         .last_update_time
                         .duration_since(last_persist_time);
 
-                    duration.as_secs() as i64
+                    duration.as_positive_or_zero().as_secs() as i64
                 } else {
                     0
                 }

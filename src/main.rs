@@ -1,5 +1,7 @@
 use app::{logs::Logs, AppContext};
-use background::{metrics_updater::MetricsUpdater, persist::PersistTimer};
+use background::{
+    metrics_updater::MetricsUpdater, persist::PersistTimer, presist_process_gc::PersistProcessGc,
+};
 
 use rust_extensions::MyTimer;
 use std::{sync::Arc, time::Duration};
@@ -41,13 +43,21 @@ async fn main() {
     ));
 
     let mut timer_1s = MyTimer::new(Duration::from_secs(1));
-    let mut persist_timer = MyTimer::new(Duration::from_secs(1));
-
-    persist_timer.register_timer("Persist", Arc::new(PersistTimer::new(app.clone())));
     timer_1s.register_timer("MetricsUpdated", Arc::new(MetricsUpdater::new(app.clone())));
-
     timer_1s.start(app.states.clone(), app.clone());
+
+    let mut persist_timer = MyTimer::new(Duration::from_secs(1));
+    persist_timer.register_timer("Persist", Arc::new(PersistTimer::new(app.clone())));
     persist_timer.start(app.states.clone(), app.clone());
+
+    let mut processes_gc_timer = MyTimer::new(Duration::from_secs(30));
+
+    processes_gc_timer.register_timer(
+        "ProcessesGcTimer",
+        Arc::new(PersistProcessGc::new(app.clone())),
+    );
+
+    processes_gc_timer.start(app.states.clone(), app.clone());
 
     crate::http::start_up::setup_server(&app);
 

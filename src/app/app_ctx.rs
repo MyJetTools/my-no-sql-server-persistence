@@ -29,7 +29,7 @@ pub struct AppContext {
     pub settings: Arc<SettingsModel>,
     pub states: Arc<AppStates>,
 
-    pub grpc_persist_process: GrpcPersistProcesses,
+    pub grpc_persist_processes: GrpcPersistProcesses,
 
     persist_amount: AtomicUsize,
 }
@@ -52,7 +52,7 @@ impl AppContext {
             persist_io,
             settings,
             persist_amount: AtomicUsize::new(0),
-            grpc_persist_process: GrpcPersistProcesses::new(),
+            grpc_persist_processes: GrpcPersistProcesses::new(),
         }
     }
 

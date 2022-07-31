@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 
-use rust_extensions::date_time::DateTimeAsMicroseconds;
+use rust_extensions::{date_time::DateTimeAsMicroseconds, lazy::LazyVec};
 use tokio::sync::Mutex;
 
 use crate::mynosqlserverpersistence_grpc::*;
@@ -57,5 +57,27 @@ impl GrpcPersistProcesses {
         }
 
         result.unwrap()
+    }
+
+    pub async fn gc(&self, gc_timeout: Duration) {
+        let mut write_access = self.processes.lock().await;
+        let now = DateTimeAsMicroseconds::now();
+
+        let to_gc = {
+            let mut to_gc = LazyVec::new();
+            for (process_id, process) in &*write_access {
+                if now.duration_since(process.created).as_positive_or_zero() > gc_timeout {
+                    to_gc.add(*process_id);
+                }
+            }
+
+            to_gc.get_result()
+        };
+
+        if let Some(to_gc) = to_gc {
+            for process_id in to_gc {
+                write_access.remove(&process_id);
+            }
+        }
     }
 }

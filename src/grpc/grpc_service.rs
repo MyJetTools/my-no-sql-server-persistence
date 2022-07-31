@@ -109,7 +109,7 @@ impl MyNoSqlServerPersistnceGrpcService for GrpcServer {
         let request = request.into_inner();
 
         self.app
-            .grpc_persist_process
+            .grpc_persist_processes
             .add(
                 request.process_id,
                 request.table_name,
@@ -136,7 +136,7 @@ impl MyNoSqlServerPersistnceGrpcService for GrpcServer {
 
         let persist_process = {
             let first = entities.get(0).unwrap();
-            self.app.grpc_persist_process.get(first.process_id).await
+            self.app.grpc_persist_processes.get(first.process_id).await
         };
 
         let db_table_wrapper =
@@ -182,7 +182,7 @@ impl MyNoSqlServerPersistnceGrpcService for GrpcServer {
 
         let persist_process = {
             let first = entities.get(0).unwrap();
-            self.app.grpc_persist_process.get(first.process_id).await
+            self.app.grpc_persist_processes.get(first.process_id).await
         };
 
         let db_table_wrapper =
@@ -210,7 +210,7 @@ impl MyNoSqlServerPersistnceGrpcService for GrpcServer {
 
         let persist_process = {
             let first = entities.get(0).unwrap();
-            self.app.grpc_persist_process.get(first.process_id).await
+            self.app.grpc_persist_processes.get(first.process_id).await
         };
 
         let db_table_wrapper =
@@ -237,7 +237,7 @@ impl MyNoSqlServerPersistnceGrpcService for GrpcServer {
 
         let persist_process = {
             let first = delete_entities.get(0).unwrap();
-            self.app.grpc_persist_process.get(first.process_id).await
+            self.app.grpc_persist_processes.get(first.process_id).await
         };
 
         let db_table_wrapper =
