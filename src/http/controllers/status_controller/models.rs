@@ -1,6 +1,6 @@
 use crate::app::AppContext;
 use my_http_server_swagger::*;
-use rust_extensions::ApplicationStates;
+
 use serde::{Deserialize, Serialize};
 
 use super::{non_initialized::NonInitializedModel, status_bar_model::StatusBarModel};

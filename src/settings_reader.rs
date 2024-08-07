@@ -3,15 +3,18 @@ use serde::{Deserialize, Serialize};
 use std::{env, sync::Arc};
 use tokio::{fs::File, io::AsyncReadExt};
 
-use crate::{app::logs::Logs, persist_io::PersistIoOperations};
+use crate::persist_io::PersistIoOperations;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SettingsModel {
-    #[serde(rename = "PersistenceDest")]
-    pub persistence_dest: String,
+    #[serde(rename = "LegacyPersistenceDest")]
+    pub legacy_persistence_dest: Option<String>,
 
-    #[serde(rename = "Location")]
-    pub location: String,
+    #[serde(rename = "LegacyZipArchive")]
+    pub legacy_zip_archive: Option<String>,
+
+    #[serde(rename = "PersistenceDest")]
+    persistence_dest: String,
 
     #[serde(rename = "SkipBrokenPartitions")]
     pub skip_broken_partitions: bool,
@@ -21,9 +24,14 @@ pub struct SettingsModel {
 }
 
 impl SettingsModel {
-    pub fn get_persist_io(&self, logs: Arc<Logs>) -> PersistIoOperations {
-        let conn_string = AzureStorageConnection::from_conn_string(self.persistence_dest.as_str());
-        PersistIoOperations::new(Arc::new(conn_string), logs)
+    pub fn get_persist_io(&self) -> Option<PersistIoOperations> {
+        let conn_string =
+            AzureStorageConnection::from_conn_string(self.legacy_persistence_dest.as_ref()?);
+        Some(PersistIoOperations::new(Arc::new(conn_string)))
+    }
+
+    pub fn get_persistence_dest(&self) -> String {
+        rust_extensions::file_utils::format_path(self.persistence_dest.as_str()).to_string()
     }
 }
 
@@ -43,9 +51,11 @@ pub async fn read_settings() -> SettingsModel {
 fn get_settings_filename() -> String {
     let path = env!("HOME");
 
-    if path.ends_with('/') {
-        return format!("{}{}", path, ".mynosqlserver");
+    let file_name = ".mynosqlserver-persistence";
+
+    if path.ends_with(std::path::MAIN_SEPARATOR) {
+        return format!("{}{}", path, file_name);
     }
 
-    return format!("{}{}", path, "/.mynosqlserver");
+    return format!("{}{}{}", path, std::path::MAIN_SEPARATOR, file_name);
 }

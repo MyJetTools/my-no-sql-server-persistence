@@ -21,6 +21,7 @@ impl PersistProcessGc {
 #[async_trait::async_trait]
 impl MyTimerTick for PersistProcessGc {
     async fn tick(&self) {
-        self.app.grpc_persist_processes.gc(self.gc_timeout).await;
+        todo!("Implement");
+        // self.app.grpc_persist_processes.gc(self.gc_timeout).await;
     }
 }

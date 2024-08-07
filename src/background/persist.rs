@@ -17,6 +17,7 @@ impl PersistTimer {
 #[async_trait::async_trait]
 impl MyTimerTick for PersistTimer {
     async fn tick(&self) {
-        crate::operations::persist(&self.app).await;
+        todo!("Implement");
+        //   crate::operations::persist(&self.app).await;
     }
 }

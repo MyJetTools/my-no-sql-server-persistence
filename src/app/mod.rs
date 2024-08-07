@@ -1,8 +1,7 @@
 mod app_ctx;
 
-pub mod logs;
-mod metrics;
+//mod metrics;
 
-pub use app_ctx::{AppContext, APP_VERSION};
-pub use metrics::PrometheusMetrics;
-pub use metrics::UpdatePendingToSyncModel;
+pub use app_ctx::AppContext;
+//pub use metrics::PrometheusMetrics;
+//pub use metrics::UpdatePendingToSyncModel;

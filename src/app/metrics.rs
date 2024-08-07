@@ -1,7 +1,5 @@
 use prometheus::{Encoder, IntGauge, IntGaugeVec, Opts, Registry, TextEncoder};
 
-use crate::operations::DbTableMetrics;
-
 #[async_trait::async_trait]
 pub trait UpdatePendingToSyncModel {
     async fn get_name(&self) -> Option<String>;

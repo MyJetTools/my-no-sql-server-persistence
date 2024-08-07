@@ -81,7 +81,7 @@ fn get_table_name(path: &str) -> Option<&str> {
     None
 }
 
-async fn render_select_table(app: &AppContext) -> HttpOkResult {
+async fn render_select_table(app: &AppContext) -> Result<HttpOkResult, HttpFailResult> {
     let mut body = String::new();
 
     body.push_str("<h1>Please, select table to show logs</h1>");
@@ -93,7 +93,5 @@ async fn render_select_table(app: &AppContext) -> HttpOkResult {
         body.push_str(line.as_str());
     }
 
-    super::super::as_html::build("Select table to show logs", body.as_str())
-        .into_ok_result(true)
-        .into()
+    super::super::as_html::build("Select table to show logs", body.as_str()).into_ok_result(true)
 }

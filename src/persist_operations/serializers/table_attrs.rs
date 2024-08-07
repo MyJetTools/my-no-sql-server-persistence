@@ -1,4 +1,4 @@
-use my_no_sql_core::db::DbTableAttributes;
+use my_no_sql_sdk::core::db::DbTableAttributes;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 use serde::{Deserialize, Serialize};
 
@@ -35,6 +35,7 @@ impl Into<DbTableAttributes> for TableMetadataFileContract {
             created: DateTimeAsMicroseconds::now(),
             max_partitions_amount: self.max_partitions_amount,
             persist: self.persist,
+            max_rows_per_partition_amount: todo!(),
         }
     }
 }

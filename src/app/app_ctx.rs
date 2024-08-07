@@ -1,90 +1,46 @@
-use std::sync::{atomic::AtomicUsize, Arc};
+use std::sync::Arc;
 
-use rust_extensions::{date_time::DateTimeAsMicroseconds, AppStates, Logger};
+use rust_extensions::{date_time::DateTimeAsMicroseconds, AppStates};
+use tokio::sync::Mutex;
 
 use crate::{
-    db::DbInstance, grpc::grpc_persist_process::GrpcPersistProcesses,
-    persist_io::PersistIoOperations, persist_operations::data_initializer::load_tasks::InitState,
+    cache_data::Tables,
+    init_legacy::{InitFromArchiveState, InitState},
+    persist_io::PersistIoOperations,
     settings_reader::SettingsModel,
-};
-
-use super::{
-    logs::{Logs, SystemProcess},
-    PrometheusMetrics,
 };
 
 pub const APP_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 pub struct AppContext {
     pub created: DateTimeAsMicroseconds,
-    pub db: DbInstance,
-    pub logs: Arc<Logs>,
-
-    pub metrics: PrometheusMetrics,
 
     pub process_id: String,
 
-    pub persist_io: PersistIoOperations,
-    pub init_state: InitState,
+    pub persist_io: Option<PersistIoOperations>,
+    pub init_state: Mutex<InitState>,
+    pub init_from_archive: Mutex<InitFromArchiveState>,
     pub settings: Arc<SettingsModel>,
     pub states: Arc<AppStates>,
 
-    pub grpc_persist_processes: GrpcPersistProcesses,
-
-    persist_amount: AtomicUsize,
+    pub tables: Tables,
 }
 
 impl AppContext {
-    pub fn new(
-        logs: Arc<Logs>,
-        settings: Arc<SettingsModel>,
-        persist_io: PersistIoOperations,
-    ) -> Self {
+    pub fn new(settings: Arc<SettingsModel>) -> Self {
+        let persist_io = settings.get_persist_io();
         AppContext {
+            tables: Tables::new(settings.get_persistence_dest()),
             created: DateTimeAsMicroseconds::now(),
-            init_state: InitState::new(),
-            db: DbInstance::new(),
-            logs,
-            metrics: PrometheusMetrics::new(),
+            init_state: Mutex::new(InitState::new()),
+
             process_id: uuid::Uuid::new_v4().to_string(),
             states: Arc::new(AppStates::create_un_initialized()),
+            init_from_archive: Mutex::new(InitFromArchiveState::new()),
 
             persist_io,
+
             settings,
-            persist_amount: AtomicUsize::new(0),
-            grpc_persist_processes: GrpcPersistProcesses::new(),
         }
-    }
-
-    pub fn update_persist_amount(&self, value: usize) {
-        self.persist_amount
-            .store(value, std::sync::atomic::Ordering::SeqCst);
-    }
-
-    pub fn get_persist_amount(&self) -> usize {
-        self.persist_amount
-            .load(std::sync::atomic::Ordering::Relaxed)
-    }
-}
-
-impl Logger for AppContext {
-    fn write_info(&self, process_name: String, message: String, context: Option<String>) {
-        self.logs
-            .add_info(None, SystemProcess::System, process_name, message, context);
-    }
-
-    fn write_error(&self, process_name: String, message: String, context: Option<String>) {
-        self.logs
-            .add_fatal_error(None, SystemProcess::System, process_name, message, context);
-    }
-
-    fn write_warning(&self, process_name: String, message: String, ctx: Option<String>) {
-        self.logs
-            .add_error(None, SystemProcess::System, process_name, message, ctx);
-    }
-
-    fn write_fatal_error(&self, process_name: String, message: String, ctx: Option<String>) {
-        self.logs
-            .add_error(None, SystemProcess::System, process_name, message, ctx);
     }
 }

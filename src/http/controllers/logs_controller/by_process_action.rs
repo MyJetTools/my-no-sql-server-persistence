@@ -60,7 +60,7 @@ impl GetAction for LogsByProcessAction {
             None => {
                 sw.pause();
 
-                Ok(HttpOutput::Content {
+                HttpOutput::Content {
                     headers: None,
                     content_type: Some(WebContentType::Text),
                     content: format!(
@@ -70,13 +70,13 @@ impl GetAction for LogsByProcessAction {
                     )
                     .into_bytes(),
                 }
-                .into_ok_result(true))
+                .into_ok_result(true)
             }
         }
     }
 }
 
-async fn render_select_process() -> HttpOkResult {
+async fn render_select_process() -> Result<HttpOkResult, HttpFailResult> {
     let mut sb = String::new();
 
     sb.push_str("<h1>Please, select process to show logs</h1>");
@@ -89,7 +89,5 @@ async fn render_select_process() -> HttpOkResult {
         sb.push_str(line.as_str())
     }
 
-    super::super::as_html::build("Select table to show logs", sb.as_str())
-        .into_ok_result(true)
-        .into()
+    super::super::as_html::build("Select table to show logs", sb.as_str()).into_ok_result(true)
 }

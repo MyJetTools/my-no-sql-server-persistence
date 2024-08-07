@@ -1,11 +1,15 @@
 use std::sync::Arc;
 
-use my_http_server::HttpOkResult;
+use my_http_server::{HttpFailResult, HttpOkResult};
 use rust_extensions::{StopWatch, StringBuilder};
 
 use crate::app::logs::LogItem;
 
-pub fn compile_result(title: &str, logs: Vec<Arc<LogItem>>, mut sw: StopWatch) -> HttpOkResult {
+pub fn compile_result(
+    title: &str,
+    logs: Vec<Arc<LogItem>>,
+    mut sw: StopWatch,
+) -> Result<HttpOkResult, HttpFailResult> {
     let mut sb = StringBuilder::new();
 
     sb.append_line(
@@ -51,8 +55,8 @@ pub fn compile_result(title: &str, logs: Vec<Arc<LogItem>>, mut sw: StopWatch) -
         let line = format!("<b>Msg:</b> {}</br>", log_item.message.as_str());
         sb.append_line(line.as_str());
 
-        if let Some(err_ctx) = &log_item.err_ctx {
-            let line = format!("<b>ErrCTX:</b> {}</br>", err_ctx);
+        if let Some(err_ctx) = &log_item.ctx {
+            let line = format!("<b>ErrCTX:</b> {:?}</br>", err_ctx);
             sb.append_line(line.as_str());
         }
 
@@ -64,9 +68,7 @@ pub fn compile_result(title: &str, logs: Vec<Arc<LogItem>>, mut sw: StopWatch) -
     let line = format!("Rendered in {:?}", sw.duration());
     sb.append_line(line.as_str());
 
-    super::super::as_html::build(title, sb.to_string_utf8().unwrap().as_str())
-        .into_ok_result(true)
-        .into()
+    super::super::as_html::build(title, sb.to_string_utf8().unwrap().as_str()).into_ok_result(true)
 }
 
 fn get_log_level_color(item: &LogItem) -> &str {

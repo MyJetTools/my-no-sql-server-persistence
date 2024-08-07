@@ -1,9 +1,9 @@
-use crate::app::logs::Logs;
 use std::time::Duration;
 
+use my_logger::LogEventCtx;
+
 pub async fn execute(
-    logs: &Logs,
-    table_name: Option<String>,
+    table_name: Option<&str>,
     process_name: &str,
     message: String,
     attempt_no: u8,
@@ -12,13 +12,15 @@ pub async fn execute(
         panic!("{}", message.as_str());
     }
 
-    logs.add_error(
-        table_name,
-        crate::app::logs::SystemProcess::Init,
-        process_name.to_string(),
-        message,
-        Some(format!("Attempt: {}", attempt_no)),
-    );
+    let ctx = if let Some(table_name) = table_name {
+        LogEventCtx::new()
+            .add("tableName", table_name)
+            .add("attempt", attempt_no.to_string())
+    } else {
+        LogEventCtx::new().add("attempt", attempt_no.to_string())
+    };
+
+    my_logger::LOGGER.write_error(process_name.to_string(), message, ctx);
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 }

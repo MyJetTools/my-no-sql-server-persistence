@@ -1,27 +1,27 @@
-use app::{logs::Logs, AppContext};
-use background::{
-    metrics_updater::MetricsUpdater, persist::PersistTimer, presist_process_gc::PersistProcessGc,
-};
+use app::AppContext;
 
-use rust_extensions::MyTimer;
 use std::{sync::Arc, time::Duration};
 
 mod app;
 mod grpc;
 
-mod db;
-
-mod http;
+//mod http;
 
 mod background;
+mod cache_data;
 
-mod operations;
+mod init;
+
+mod init_legacy;
+mod serializers;
+mod sqlite;
+//mod operations;
 mod persist_io;
-mod persist_operations;
+//mod persist_operations;
 mod settings_reader;
 
-pub mod mynosqlserverpersistence_grpc {
-    tonic::include_proto!("mynosqlserverpersistence");
+pub mod my_no_sql_server_persistence_grpc {
+    tonic::include_proto!("my_no_sql_server_persistence");
 }
 
 #[tokio::main]
@@ -30,18 +30,16 @@ async fn main() {
 
     let settings = Arc::new(settings);
 
-    let logs = Arc::new(Logs::new());
-
-    let persist_io = settings.get_persist_io(logs.clone());
-
-    let app = AppContext::new(logs.clone(), settings, persist_io);
+    let app = AppContext::new(settings);
 
     let app = Arc::new(app);
 
-    tokio::spawn(crate::persist_operations::data_initializer::load_tables(
-        app.clone(),
-    ));
+    crate::init_legacy::start(&app).await;
 
+    crate::init_legacy::start_from_archive(&app).await;
+
+    crate::init::start(&app).await;
+    /*
     let mut timer_1s = MyTimer::new(Duration::from_secs(1));
     timer_1s.register_timer("MetricsUpdated", Arc::new(MetricsUpdater::new(app.clone())));
     timer_1s.start(app.states.clone(), app.clone());
@@ -69,7 +67,9 @@ async fn main() {
     )
     .unwrap();
 
-    shut_down_task(app).await;
+     */
+
+    //shut_down_task(app).await;
 }
 
 async fn shut_down_task(app: Arc<AppContext>) {
@@ -82,5 +82,6 @@ async fn shut_down_task(app: Arc<AppContext>) {
     println!("Shut down detected. Waiting for 1 second to deliver all messages");
     tokio::time::sleep(duration).await;
 
-    crate::operations::shutdown::execute(app.as_ref()).await;
+    todo!("Restore")
+    //  crate::operations::shutdown::execute(app.as_ref()).await;
 }

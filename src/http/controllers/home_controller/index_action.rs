@@ -29,7 +29,7 @@ impl GetAction for IndexAction {
 
     async fn handle_request(&self, _: &mut HttpContext) -> Result<HttpOkResult, HttpFailResult> {
         let content = format!(
-            r###"<html><head><title>{} MyNoSQLServer</title>
+            r###"<html><head><title>{ver} MyNoSQLServer</title>
             <link href="/css/bootstrap.css" rel="stylesheet" type="text/css" />
             <link href="/css/site.css" rel="stylesheet" type="text/css" />
             <script src="/js/jquery.js"></script><script src="/js/app.js?ver={rnd}"></script>

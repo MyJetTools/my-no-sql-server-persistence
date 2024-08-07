@@ -3,23 +3,17 @@ use my_azure_storage_sdk::{
     AzureStorageConnection, AzureStorageConnectionData,
 };
 
-use crate::{app::logs::Logs, persist_io::persist_io_operations::TableListOfFilesUploader};
+use crate::persist_io::persist_io_operations::TableListToPopulate;
 
-pub async fn get_list_of_files<TTableListOfFilesUploader: TableListOfFilesUploader>(
-    logs: &Logs,
+pub async fn get_list_of_files<TTableListOfFilesUploader: TableListToPopulate>(
     azure_connection: &AzureStorageConnection,
     table_name: &str,
     uploader: &TTableListOfFilesUploader,
 ) {
     match azure_connection {
         AzureStorageConnection::AzureStorage(connection_data) => {
-            get_list_of_files_from_azure_blob_container(
-                logs,
-                connection_data,
-                table_name,
-                uploader,
-            )
-            .await;
+            get_list_of_files_from_azure_blob_container(connection_data, table_name, uploader)
+                .await;
         }
         _ => {
             let chunk = azure_connection
@@ -27,16 +21,15 @@ pub async fn get_list_of_files<TTableListOfFilesUploader: TableListOfFilesUpload
                 .await
                 .unwrap();
 
-            uploader.add_files(table_name, chunk).await;
-            uploader.set_files_list_is_loaded(table_name).await;
+            uploader.add_files(chunk).await;
+            uploader.set_files_list_is_loaded().await;
         }
     };
 }
 
 async fn get_list_of_files_from_azure_blob_container<
-    TTableListOfFilesUploader: TableListOfFilesUploader,
+    TTableListOfFilesUploader: TableListToPopulate,
 >(
-    logs: &Logs,
     connection: &AzureStorageConnectionData,
     table_name: &str,
     uploader: &TTableListOfFilesUploader,
@@ -48,16 +41,15 @@ async fn get_list_of_files_from_azure_blob_container<
         match next_result {
             Ok(chunk) => {
                 if let Some(chunk) = chunk {
-                    uploader.add_files(table_name, chunk).await;
+                    uploader.add_files(chunk).await;
                 } else {
-                    uploader.set_files_list_is_loaded(table_name).await;
+                    uploader.set_files_list_is_loaded().await;
                     return;
                 }
             }
             Err(err) => {
                 super::attempt_handling::execute(
-                    logs,
-                    Some(table_name.to_string()),
+                    Some(table_name),
                     "get_list_of_files_from_azure_blob_container",
                     format!(
                         "Can not get list of files from azure blob container:[{}]. Err: {:?}",
