@@ -9,37 +9,48 @@ message TableDescriptionGrpcModel {
 }
 
 
-message PersistEvent{
-    string TableName = 1;
-    int64 PersistMoment = 2;
-    InsertOrUpdateRow  InsertOrUpdateRow = 3;
-    DeletePartition DeletePartition = 4;
-    DeleteRow DeleteRow = 5;
-    UpdateTableAttributes UpdateTableAttributes = 6;
 
+message PersistGrpcEvent{
+    uint64 TransactionId = 1;
+    StartTransactionGrpcEvent StartTransaction = 2;
+    InsertOrUpdateRowGrpcModel  InsertOrUpdateRow = 3;
+    DeletePartitionGrpcModel DeletePartition = 4;
+    DeleteRowGrpcModel DeleteRow = 5;
+    UpdateTableAttributesGrpcModel UpdateTableAttributes = 6;
+    bool Commit = 7;
 }
 
-message InsertOrUpdateRow{
+message StartTransactionGrpcEvent{
+    string TableName = 1;
+    int64 PersistMoment = 2;
+}
+
+message InsertOrUpdateRowGrpcModel{
     string PartitionKey = 2;
     string RowKey = 3;
     string Data = 4;
 }
 
-message DeletePartition{
+message DeletePartitionGrpcModel{
     string PartitionKey = 2;
 }
 
-message DeleteRow{
-    string PartitionKey = 2;
+message DeleteRowGrpcModel{
+    string PartitionKey = 1;
+    string RowKey = 2;
 }
 
-message UpdateTableAttributes{
-    bool Persist =1;
-    int32 MaxPartitionsAmount = 2;
+message UpdateTableAttributesGrpcModel{
+    uint64 Created = 1;
+    bool Persist =2;
+    optional uint64 MaxPartitionsAmount = 3;
+    optional uint64 MaxRowsPerPartition = 4;
 }
+
+
 
 service MyNoSqlServerPersistenceGrpcService {
     rpc GetTables(google.protobuf.Empty) returns (stream TableDescriptionGrpcModel);
-    rpc PersistEvents(stream PersistEvent) returns (google.protobuf.Empty);
+    rpc PersistEvents(stream PersistGrpcEvent) returns (google.protobuf.Empty);
     rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty);
 }

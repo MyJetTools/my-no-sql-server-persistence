@@ -116,7 +116,9 @@ async fn load_table(app: Arc<AppContext>) {
                 TableFile::TableAttributes => {
                     let meta_data: TableMetadataFileContract =
                         serde_json::from_slice(itm.content.as_slice()).unwrap();
-                    app.tables.restore_table(&table_name, meta_data).await;
+                    app.tables
+                        .restore_table(&table_name, meta_data.into())
+                        .await;
                 }
                 TableFile::DbPartition(_) => {
                     let db_rows =

@@ -1,12 +1,10 @@
 use std::sync::Arc;
 
-use rust_extensions::sorted_vec::SortedVecOfArcWithStrKey;
+use my_no_sql_sdk::core::db::DbTableAttributes;
+use rust_extensions::sorted_vec::*;
 use tokio::sync::Mutex;
 
-use crate::{
-    serializers::{DbRowFromFile, TableMetadataFileContract},
-    sqlite::TableRepo,
-};
+use crate::serializers::DbRowFromFile;
 
 use super::TableDataHolder;
 
@@ -28,12 +26,32 @@ impl Tables {
         write_access.get(table_name).cloned()
     }
 
+    pub async fn get_or_create_table(&self, table_name: &str) -> Arc<TableDataHolder> {
+        let mut write_access = self.data.lock().await;
+
+        if let Some(result) = write_access.get(table_name) {
+            return result.clone();
+        }
+
+        let table_data = TableDataHolder::new(
+            compile_sql_table_file_name(self.sqlite_table_path.as_str(), table_name),
+            table_name.to_string(),
+            DbTableAttributes::create_default(),
+        )
+        .await;
+
+        let table_data = Arc::new(table_data);
+        write_access.insert_or_replace(table_data.clone());
+
+        table_data
+    }
+
     pub async fn get_tables(&self) -> Vec<Arc<TableDataHolder>> {
         let write_access = self.data.lock().await;
         write_access.to_vec_cloned()
     }
 
-    pub async fn restore_table(&self, table_name: &str, meta_data: TableMetadataFileContract) {
+    pub async fn restore_table(&self, table_name: &str, meta_data: DbTableAttributes) {
         match self.data.lock().await.get_or_create(table_name) {
             rust_extensions::sorted_vec::GetOrCreateEntry::Get(table_data) => {
                 let mut table_data = table_data.data.lock().await;
@@ -69,8 +87,8 @@ impl Tables {
 
                 for db_row in db_rows {
                     table_data.insert_or_update(
-                        db_row.partition_key,
-                        db_row.row_key,
+                        &db_row.partition_key,
+                        &db_row.row_key,
                         db_row.content,
                     );
                 }
@@ -79,7 +97,7 @@ impl Tables {
                 let table_data = TableDataHolder::new(
                     compile_sql_table_file_name(self.sqlite_table_path.as_str(), table_name),
                     table_name.to_string(),
-                    TableMetadataFileContract::create_default(),
+                    DbTableAttributes::create_default(),
                 )
                 .await;
 
@@ -91,8 +109,8 @@ impl Tables {
 
                     for db_row in db_rows {
                         table_data.insert_or_update(
-                            db_row.partition_key,
-                            db_row.row_key,
+                            &db_row.partition_key,
+                            &db_row.row_key,
                             db_row.content,
                         );
                     }

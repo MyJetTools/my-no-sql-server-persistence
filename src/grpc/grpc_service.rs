@@ -3,9 +3,11 @@ use super::server::GrpcServer;
 use crate::my_no_sql_server_persistence_grpc::my_no_sql_server_persistence_grpc_service_server::*;
 use crate::my_no_sql_server_persistence_grpc::*;
 use futures_core::Stream;
+use quick_xml::events;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use std::pin::Pin;
+use std::time::Duration;
 
 use tonic::Status;
 
@@ -23,9 +25,19 @@ impl MyNoSqlServerPersistenceGrpcService for GrpcServer {
 
     async fn persist_events(
         &self,
-        _request: tonic::Request<tonic::Streaming<PersistEvent>>,
+        request: tonic::Request<tonic::Streaming<PersistGrpcEvent>>,
     ) -> Result<tonic::Response<()>, tonic::Status> {
-        todo!("Implement");
+        let stream = request.into_inner();
+
+        let events = my_grpc_extensions::read_grpc_stream::as_vec(stream, Duration::from_secs(10))
+            .await
+            .unwrap();
+
+        if let Some(events) = events {
+            crate::flows::handle_persist_events(&self.app, events).await;
+        }
+
+        Ok(tonic::Response::new(()))
     }
 
     async fn ping(&self, _: tonic::Request<()>) -> Result<tonic::Response<()>, tonic::Status> {

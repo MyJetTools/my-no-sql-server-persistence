@@ -8,15 +8,6 @@ pub enum TableFile {
     DbPartition(PartitionKey),
 }
 
-impl TableFile {
-    pub fn as_str(&self) -> &str {
-        match self {
-            TableFile::TableAttributes => TABLE_METADATA_FILE_NAME,
-            TableFile::DbPartition(partition_key) => partition_key.as_str(),
-        }
-    }
-}
-
 pub struct TableFileName<'s> {
     as_str: Option<&'s str>,
     as_string: Option<String>,

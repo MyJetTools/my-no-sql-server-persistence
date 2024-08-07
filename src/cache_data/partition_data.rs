@@ -15,10 +15,10 @@ impl PartitionData {
         }
     }
 
-    pub fn insert_or_update(&mut self, row_key: String, content: String) {
-        match self.rows.insert_or_update(&row_key) {
+    pub fn insert_or_update(&mut self, row_key: &str, content: String) {
+        match self.rows.insert_or_update(row_key) {
             InsertOrUpdateEntry::Insert(entry) => {
-                entry.insert(RawData::new(row_key, content));
+                entry.insert(RawData::new(row_key.to_string(), content));
             }
             InsertOrUpdateEntry::Update(entry) => {
                 entry.item.content = content;

@@ -1,4 +1,6 @@
+use my_no_sql_sdk::core::db::DbTableAttributes;
 use my_sqlite::macros::*;
+use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use crate::serializers::TableMetadataFileContract;
 #[derive(TableSchema, InsertDbEntity, UpdateDbEntity, SelectDbEntity, Debug)]
@@ -22,15 +24,34 @@ pub struct TableMetaDataDto {
     pub created: Option<String>,
 }
 
-impl<'s> Into<TableMetaDataDto> for &'s TableMetadataFileContract {
+impl Into<DbTableAttributes> for TableMetaDataDto {
+    fn into(self) -> DbTableAttributes {
+        let created = if let Some(created) = self.created.as_ref() {
+            match DateTimeAsMicroseconds::from_str(created.as_str()) {
+                Some(value) => value,
+                None => DateTimeAsMicroseconds::now(),
+            }
+        } else {
+            DateTimeAsMicroseconds::now()
+        };
+
+        DbTableAttributes {
+            persist: self.persist,
+            max_partitions_amount: self.max_partitions_amount.map(|itm| itm as usize),
+            max_rows_per_partition_amount: self.max_rows_per_partition.map(|itm| itm as usize),
+            created,
+        }
+    }
+}
+
+impl<'s> Into<TableMetaDataDto> for &'s DbTableAttributes {
     fn into(self) -> TableMetaDataDto {
-        let created = self.created.as_ref().map(|itm| itm.to_string());
         TableMetaDataDto {
             id: 0,
             persist: self.persist,
             max_partitions_amount: self.max_partitions_amount.map(|x| x as u64),
             max_rows_per_partition: self.max_rows_per_partition_amount.map(|x| x as u64),
-            created,
+            created: Some(self.created.to_rfc3339()),
         }
     }
 }

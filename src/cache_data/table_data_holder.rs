@@ -1,3 +1,4 @@
+use my_no_sql_sdk::core::db::DbTableAttributes;
 use rust_extensions::sorted_vec::*;
 use tokio::sync::Mutex;
 
@@ -18,7 +19,7 @@ impl TableDataHolder {
     pub async fn new(
         sqlite_table_path: String,
         table_name: String,
-        meta_data: TableMetadataFileContract,
+        meta_data: DbTableAttributes,
     ) -> Self {
         Self {
             table_name,
@@ -30,9 +31,9 @@ impl TableDataHolder {
     pub async fn restore(sqlite_table_path: String, table_name: &str) -> Self {
         let repo = TableRepo::new(sqlite_table_path).await;
 
-        let meta_data: TableMetadataFileContract = match repo.get_table_attribute().await {
+        let meta_data: DbTableAttributes = match repo.get_table_attribute().await {
             Some(value) => value.into(),
-            None => TableMetadataFileContract::create_default(),
+            None => DbTableAttributes::create_default(),
         };
 
         let records = repo.get_all().await;
@@ -40,7 +41,7 @@ impl TableDataHolder {
         let mut table_data = TableCache::new(meta_data);
 
         for record in records {
-            table_data.insert_or_update(record.partition_key, record.row_key, record.content);
+            table_data.insert_or_update(&record.partition_key, &record.row_key, record.content);
         }
 
         Self {

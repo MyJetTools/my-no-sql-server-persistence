@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use my_no_sql_sdk::core::db::DbTableAttributes;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use crate::{app::AppContext, serializers::TableMetadataFileContract};
@@ -93,11 +94,13 @@ async fn load_table_process(app: Arc<AppContext>) {
                     Some(content) => {
                         let meta_data: TableMetadataFileContract =
                             serde_json::from_slice(content.as_slice()).unwrap();
-                        app.tables.restore_table(&table_name, meta_data).await;
+                        app.tables
+                            .restore_table(&table_name, meta_data.into())
+                            .await;
                     }
                     None => {
                         app.tables
-                            .restore_table(&table_name, TableMetadataFileContract::create_default())
+                            .restore_table(&table_name, DbTableAttributes::create_default())
                             .await;
                     }
                 },

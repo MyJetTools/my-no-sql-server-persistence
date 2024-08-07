@@ -1,7 +1,5 @@
 use my_sqlite::{sql_where::NoneWhereModel, SqlLiteConnectionBuilder};
 
-use crate::serializers::TableMetadataFileContract;
-
 use super::{DbRowDto, TableMetaDataDto, WhereModelAll};
 
 pub const TABLE_NAME_ROWS: &str = "rows";
